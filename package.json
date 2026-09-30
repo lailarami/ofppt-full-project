@@ -1,0 +1,19 @@
+{
+  "name": "ofppt-formation-continue-monorepo",
+  "version": "1.0.0",
+  "description": "Plateforme OFPPT de gestion de la formation continue – Monorepo",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && cd frontend && npm install && cd ../backend/api-gateway && npm install && cd ../services/auth-service && npm install && cd ../user-service && npm install && cd ../formation-service && npm install && cd ../plan-service && npm install && cd ../notification-service && npm install",
+    "dev:frontend": "cd frontend && npm start",
+    "dev:backend": "cd backend && docker-compose up",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "build:frontend": "cd frontend && npm run build"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3"
+  }
+}

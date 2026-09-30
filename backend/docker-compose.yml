@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: ofppt_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ofppt_admin
+      MONGO_INITDB_ROOT_PASSWORD: ofppt_pass_2024
+      MONGO_INITDB_DATABASE: ofppt
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - ofppt-network
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: ofppt_api_gateway
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - AUTH_SERVICE_URL=http://auth-service:5001
+      - USER_SERVICE_URL=http://user-service:5002
+      - FORMATION_SERVICE_URL=http://formation-service:5003
+      - PLAN_SERVICE_URL=http://plan-service:5004
+      - NOTIFICATION_SERVICE_URL=http://notification-service:5005
+      - JWT_SECRET=ofppt_super_secret_key_2024
+    depends_on:
+      - auth-service
+      - user-service
+      - formation-service
+      - plan-service
+      - notification-service
+    networks:
+      - ofppt-network
+
+  auth-service:
+    build: ./services/auth-service
+    container_name: ofppt_auth_service
+    restart: unless-stopped
+    ports:
+      - "5001:5001"
+    environment:
+      - PORT=5001
+      - MONGODB_URI=mongodb://ofppt_admin:ofppt_pass_2024@mongodb:27017/ofppt_auth?authSource=admin
+      - JWT_SECRET=ofppt_super_secret_key_2024
+      - JWT_EXPIRES_IN=7d
+    depends_on:
+      - mongodb
+    networks:
+      - ofppt-network
+
+  user-service:
+    build: ./services/user-service
+    container_name: ofppt_user_service
+    restart: unless-stopped
+    ports:
+      - "5002:5002"
+    environment:
+      - PORT=5002
+      - MONGODB_URI=mongodb://ofppt_admin:ofppt_pass_2024@mongodb:27017/ofppt_users?authSource=admin
+      - JWT_SECRET=ofppt_super_secret_key_2024
+    depends_on:
+      - mongodb
+    networks:
+      - ofppt-network
+
+
+  formation-service:
+    build: ./services/formation-service
+    container_name: ofppt_formation_service
+    restart: unless-stopped
+    ports:
+      - "5003:5003"
+    environment:
+      - PORT=5003
+      - MONGODB_URI=mongodb://ofppt_admin:ofppt_pass_2024@mongodb:27017/ofppt_formations?authSource=admin
+      - JWT_SECRET=ofppt_super_secret_key_2024
+    depends_on:
+      - mongodb
+    networks:
+      - ofppt-network
+
+  plan-service:
+    build: ./services/plan-service
+    container_name: ofppt_plan_service
+    restart: unless-stopped
+    ports:
+      - "5004:5004"
+    environment:
+      - PORT=5004
+      - MONGODB_URI=mongodb://ofppt_admin:ofppt_pass_2024@mongodb:27017/ofppt_plans?authSource=admin
+      - JWT_SECRET=ofppt_super_secret_key_2024
+      - NOTIFICATION_SERVICE_URL=http://notification-service:5005
+    depends_on:
+      - mongodb
+      - notification-service
+    networks:
+      - ofppt-network
+
+  notification-service:
+    build: ./services/notification-service
+    container_name: ofppt_notification_service
+    restart: unless-stopped
+    ports:
+      - "5005:5005"
+    environment:
+      - PORT=5005
+      - MONGODB_URI=mongodb://ofppt_admin:ofppt_pass_2024@mongodb:27017/ofppt_notifications?authSource=admin
+      - JWT_SECRET=ofppt_super_secret_key_2024
+    depends_on:
+      - mongodb
+    networks:
+      - ofppt-network
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  ofppt-network:
+    driver: bridge
